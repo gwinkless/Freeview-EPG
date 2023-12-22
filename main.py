@@ -52,36 +52,22 @@ def parse_duration(iso_duration):
 
     return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
-def get_days(src: str) -> list:
+def get_days(src: str, numdays:int = 3) -> list:
     """
 Generate epoch times for now, midnight tomorrow, and midnight the next day
     :return: List of times, either in epoch (for Sky) or str (for BT)
     """
+
     if src == "sky":
-        now = int(datetime.timestamp(datetime.now() - timedelta(hours=1)))
-        day_1 = int(datetime.timestamp(datetime.combine(datetime.now(), time(0, 0)) + timedelta(1)))
-        day_2 = int(datetime.timestamp(datetime.combine(datetime.now(), time(0, 0)) + timedelta(2)))
-        return [now, day_1, day_2]
+        return list(int(datetime.timestamp(datetime.combine(datetime.now(), time(0, 0)) + timedelta(x))) for x in range(numdays))
 
     elif src == "bt":
-        now = datetime.now() - timedelta(hours=1)
-        day_1 = (datetime.combine(datetime.now(), time(0, 0)) + timedelta(1))
-        day_2 = (datetime.combine(datetime.now(), time(0, 0)) + timedelta(2))
-        return [now, day_1, day_2]
+        return list((datetime.combine(datetime.now()+time(0,0)) + timedelta(x)) for x in range(numdays))
 
     elif src == "freeview":
-        midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-
-        now = math.trunc(datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
-        day_1 = math.trunc((datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(1)).timestamp())
-        day_2 = math.trunc((datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(2)).timestamp())
-        return [now, day_1, day_2]
-
+        return list((math.trunc((datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(x)).timestamp())) for x in range(numdays))
     else:
-        now = (datetime.combine(datetime.now(), time(0, 0)))
-        day_1 = (datetime.combine(datetime.now(), time(0, 0)) + timedelta(1))
-        day_2 = (datetime.combine(datetime.now(), time(0, 0)) + timedelta(2))
-        return [now, day_1, day_2]
+        return list((datetime.combine(datetime.now(), time(0, 0)) + timedelta(x)) for x in range(numdays))
 
 
 def get_channels_config() -> list:
