@@ -11,6 +11,14 @@
     {
       "src": "sky",
       "lang": "en",
+      "xmltv_id": "SkyArts.uk",
+      "provider_id": "1229",
+      "icon_url": "https://raw.githubusercontent.com/dp247/mediaportal-uk-logos/master/TV/Sky-Arts.png",
+      "name": "Sky Arts"
+    },
+    {
+      "src": "sky",
+      "lang": "en",
       "xmltv_id": "4seven.uk",
       "provider_id": "3150",
       "icon_url": "https://i.imgur.com/Fpaxyop.png",
