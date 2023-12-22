@@ -1232,14 +1232,6 @@
     {
       "src": "sky",
       "lang": "en",
-      "xmltv_id": "ITV3Plus1.uk",
-      "provider_id": "6261",
-      "icon_url": "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/itv-3-plus-uk.png",
-      "name": "ITV3+1"
-    },
-    {
-      "src": "sky",
-      "lang": "en",
       "xmltv_id": "ITV4.uk",
       "provider_id": "6534",
       "icon_url": "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/itv-4-uk.png",
@@ -1260,15 +1252,6 @@
       "provider_id": "6508",
       "icon_url": "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/itv-be-uk.png",
       "name": "ITVBe"
-    },
-    {
-      "src": "freeview",
-      "lang": "en",
-      "xmltv_id": "ITVBePlus1.uk",
-      "provider_id": "15864",
-      "region_id": "64350",
-      "icon_url": "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/itv-be-plus-uk.png",
-      "name": "ITVBe+1"
     },
     {
       "src": "sky",
