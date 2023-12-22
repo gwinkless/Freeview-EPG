@@ -7,6 +7,7 @@ import requests
 import pytz
 import re
 import unicodedata
+from pathlib import Path
 
 bt_dt_format = '%Y-%m-%dT%H:%M:%SZ'
 tz = pytz.timezone('Europe/London')
@@ -88,7 +89,7 @@ def get_channels_config() -> list:
 Load XML file of channel information
     :return: XML elements as a set, then all sets as a list
     """
-    with open('channels.json', encoding='utf-8') as channel_file:
+    with Path(__file__).parent.joinpath('channels.json').open(encoding='utf-8') as channel_file:
         data = json.load(channel_file)['channels']
 
     return data
@@ -251,6 +252,6 @@ for channel in channels_data:
 channel_xml = build_xmltv(channels_data, programme_data)
 
 # Write some XML
-with open('epg.xml', 'wb') as f:
+with Path(__file__).parent.joinpath('epg.xml').open('wb') as f:
     f.write(channel_xml)
     f.close()
