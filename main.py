@@ -72,8 +72,8 @@ Generate epoch times for now, midnight tomorrow, and midnight the next day
 
 def get_channels_config() -> list:
     """
-Load XML file of channel information
-    :return: XML elements as a set, then all sets as a list
+Load JSON file of channel information
+    :return: list of sets of elements
     """
     with Path(__file__).parent.joinpath('channels.json').open(encoding='utf-8') as channel_file:
         data = json.load(channel_file)['channels']
