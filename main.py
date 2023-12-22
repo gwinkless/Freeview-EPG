@@ -3,7 +3,7 @@ import math
 from lxml import etree
 from datetime import datetime, timedelta, time, timezone
 import json
-import requests
+import requests_cache
 import pytz
 import re
 import unicodedata
@@ -143,6 +143,7 @@ Make the channels and programmes into something readable by XMLTV
 
     return etree.tostring(data, pretty_print=True, encoding='utf-8')
 
+rsess = requests_cache.CachedSession(cache_name = Path(__file__).parent.joinpath("epgcache"), expire_after=timedelta(days=3))
 
 # Load the channels data
 channels_data = get_channels_config()
@@ -154,9 +155,12 @@ for channel in channels_data:
     if channel.get('src') == "sky":
         # Get some epoch times - right now, 12am tomorrow and 12am the day after tomorrow (so 48h)
         epoch_times = get_days("sky")
+        firstdate = True
         for epoch in epoch_times:
             url = f"https://epgservices.sky.com/5.2.2/api/2.0/channel/json/{channel.get('provider_id')}/{epoch}/86400/4"
-            req = requests.get(url)
+            # don't get today's result from cache, because there may be late schedule changes
+            if firstdate: rsess.delete(url)
+            req = rsess.get(url)
             if req.status_code != 200:
                 continue
             result = json.loads(req.text)
@@ -177,13 +181,16 @@ for channel in channels_data:
                     "icon": icon,
                     "channel": ch_name
                 })
-
+            firstdate = False
     if channel.get('src') == "freeview":
         epoch_times = get_days("freeview")
+        firstdate = True
         for epoch in epoch_times:
             # Get programme data for Freeview multiplex
-            url = f"https://www.freeview.co.uk/api/tv-guide"
-            req = requests.get(url, params={'nid': f'{channel.get("region_id")}', 'start': f'{str(epoch)}'})
+            url = f"https://www.freeview.co.uk/api/tv-guide?nid={channel['region_id']}&start={str(epoch)}"
+            # don't get today's result from cache, because there may be late schedule changes
+            if firstdate: rsess.delete(url)
+            req = rsess.get(url)
             if req.status_code != 200:
                 continue
             result = json.loads(req.text)
@@ -210,7 +217,7 @@ for channel in channels_data:
                     # There's another URL for more in-depth programme information
                     data_url = f"https://www.freeview.co.uk/api/program?sid={service_id}&nid={channel.get('region_id')}" \
                                f"&pid={listing.get('program_id')}&start_time={listing.get('start_time')}&duration={listing.get('duration')}"
-                    info_req = requests.get(data_url)
+                    info_req = rsess.get(data_url)
 
                     try:
                         res = json.loads(info_req.text)
