@@ -253,7 +253,7 @@ for channel in filter(lambda x: x.get('src')!="sky", channels_data):
                         "icon":        icon,
                         "channel":     ch_name
                     })
-        firstdate = False
+            firstdate = False
 
 
 channel_xml = build_xmltv(channels_data, programme_data)
