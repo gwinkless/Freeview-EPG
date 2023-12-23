@@ -1899,6 +1899,14 @@
       "name": "That's TV"
     },
     {
+      "src": "sky",
+      "lang": "en",
+      "xmltv_id": "ThatsChristmas.uk",
+      "provider_id": "1311",
+      "icon_url": "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/thats-christmas-uk.png",
+      "name": "That's Christmas"
+    },
+    {
       "src": "freeview",
       "lang": "en",
       "xmltv_id": "HobbyMaker.uk",
