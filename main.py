@@ -133,7 +133,7 @@ rsess = requests_cache.CachedSession(cache_name = Path(__file__).parent.joinpath
 
 # Load the channels data
 channels_data = get_channels_config()
-
+deleted_list = []
 programme_data = []
 for channel in channels_data:
     print(channel.get('name'))
@@ -174,8 +174,10 @@ for channel in channels_data:
         for epoch in epoch_times:
             # Get programme data for Freeview multiplex
             url = f"https://www.freeview.co.uk/api/tv-guide?nid={channel['region_id']}&start={str(epoch)}"
-            # don't get today's result from cache, because there may be late schedule changes
-            if firstdate: rsess.delete(url)
+            # we end up requesting the same region ID multiple times, so only delete it once so the cache still helps us
+            if firstdate and url not in deleted_list:
+                rsess.delete(url)
+                deleted_list.append(url)
             req = rsess.get(url)
             if req.status_code != 200:
                 continue
@@ -241,6 +243,8 @@ for channel in channels_data:
                         "icon":        icon,
                         "channel":     ch_name
                     })
+        firstdate = False
+
 
 channel_xml = build_xmltv(channels_data, programme_data)
 
