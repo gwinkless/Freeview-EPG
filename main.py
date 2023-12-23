@@ -1,5 +1,5 @@
 import math
-
+import itertools
 from lxml import etree
 from datetime import datetime, timedelta, time, timezone
 import json
@@ -59,7 +59,7 @@ Generate epoch times for now, midnight tomorrow, and midnight the next day
     """
 
     if src == "sky":
-        return list(int(datetime.timestamp(datetime.combine(datetime.now(), time(0, 0)) + timedelta(x))) for x in range(numdays))
+        return list(int(f'{datetime.now()+timedelta(x):%Y%m%d}') for x in range(numdays))
 
     elif src == "bt":
         return list((datetime.combine(datetime.now()+time(0,0)) + timedelta(x)) for x in range(numdays))
@@ -122,6 +122,13 @@ Make the channels and programmes into something readable by XMLTV
             description = etree.SubElement(programme, "desc")
             description.set('lang', 'en')
             description.text = remove_control_characters(pr.get("description"))
+        if "premiere" in pr and pr["premiere"]:
+            prem = etree.SubElement(programme, "premiere")
+        if "season" in pr and (pr["season"] is not None or ("episode" in pr and pr["episode"] is not None)):
+            ep=etree.SubElement(programme, "episode-num")
+            ep.set('system', 'xmltv_ns')
+            ep.text=f"{pr['season']}." if pr['season'] is not None else '0.';
+            ep.text+=f"{pr['episode']}." if "episode" in pr and pr["episode"] is not None else '.'
 
         if pr.get('icon') is not None:
             icon = etree.SubElement(programme, "icon")
@@ -135,39 +142,42 @@ rsess = requests_cache.CachedSession(cache_name = Path(__file__).parent.joinpath
 channels_data = get_channels_config()
 deleted_list = []
 programme_data = []
-for channel in channels_data:
-    print(channel.get('name'))
-    # If EPG is to be sourced from Sky:
-    if channel.get('src') == "sky":
-        # Get some epoch times - right now, 12am tomorrow and 12am the day after tomorrow (so 48h)
-        epoch_times = get_days("sky")
-        firstdate = True
-        for epoch in epoch_times:
-            url = f"https://epgservices.sky.com/5.2.2/api/2.0/channel/json/{channel.get('provider_id')}/{epoch}/86400/4"
-            # don't get today's result from cache, because there may be late schedule changes
-            if firstdate: rsess.delete(url)
-            req = rsess.get(url)
-            if req.status_code != 200:
-                continue
-            result = json.loads(req.text)
-            epg_data = result['listings'][f"{channel.get('provider_id')}"]
-            for item in epg_data:
-                title = item['t']
-                desc = item['d'] if 'd' in item else None
-                start = int(item['s'])
-                end = int(item['s']) + int(item['m'][1])
-                icon = f"http://epgstatic.sky.com/epgdata/1.0/paimage/46/1/{item['img']}" if 'img' in item else None
-                ch_name = channel.get('xmltv_id')
-
+dates = get_days("sky")
+hawk_max_chunk_size=20
+firstdate = True
+for date in dates:
+    # sky hawk will only let you request up to 20 channels at once, so we chunk our requests
+    for chunk in list(itertools.zip_longest(*[iter(filter(lambda x: x.get('src')=="sky", channels_data))] * hawk_max_chunk_size)):
+        sky_csv = ",".join(x["provider_id"] for x in chunk if x is not None)
+        # print (f"getting sky {date} for {sky_csv}")
+        url = f"https://awk.epgsky.com/hawk/linear/schedule/{date}/{sky_csv}"
+        # don't get today's result from cache, because there may be late schedule changes
+        if firstdate: rsess.delete(url)
+        req = rsess.get(url)
+        if req.status_code != 200:
+            continue
+        result = json.loads(req.text)
+        for item in result['schedule']:
+            ch_name = next(filter(lambda x: x["provider_id"] == item["sid"], channels_data)).get('xmltv_id')
+            # print(ch_name)
+            for event in item["events"]:
+                uuid = event['programmeuuid'] if 'programmeuuid' in event else event['seasonuuid'] if 'seasonuuid' in event else event['seriesuuid'] if 'seriesuuid' in event else None
                 programme_data.append({
-                    "title": title,
-                    "description": desc,
-                    "start": start,
-                    "stop": end,
-                    "icon": icon,
-                    "channel": ch_name
+                    "title": event['t'],
+                    "description": event['sy'] if 'sy' in event else None,
+                    "start": int(event['st']),
+                    "stop": int(event['st']) + int(event['d']),
+                    "icon": f"http://epgstatic.sky.com/epgdata/1.0/paimage/46/1/lisa/5.2.2/linear/channel/{uuid}/{item['sid']}" if uuid is not None else None,
+                    "channel": ch_name,
+                    "premiere": event['new'] or event['t'].startswith("New:"),
+                    "season": event['seasonnumber']-1 if 'seasonnumber' in event else None,
+                    "episode": event['episodenumber']-1 if 'episodenumber' in event else None
                 })
-            firstdate = False
+    firstdate = False
+
+for channel in filter(lambda x: x.get('src')!="sky", channels_data):
+    # print(channel.get('name'))
+
     if channel.get('src') == "freeview":
         epoch_times = get_days("freeview")
         firstdate = True
